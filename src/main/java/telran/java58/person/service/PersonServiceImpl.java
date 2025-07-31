@@ -22,6 +22,7 @@ import java.util.Arrays;
 public class PersonServiceImpl implements PersonService, CommandLineRunner {
     private final PersonRepository personRepository;
     private final ModelMapper modelMapper;
+    private final PersonMappingService mapService;
 
 
     @Override
@@ -30,27 +31,14 @@ public class PersonServiceImpl implements PersonService, CommandLineRunner {
         if (personRepository.existsById(personDto.getId())) {
             throw new PersonExistsException();
         }
-        if (personDto instanceof EmployeeDto) {
-            personRepository.save(modelMapper.map(personDto, Employee.class));
-            return;
-        }
-        if (personDto instanceof ChildDto) {
-            personRepository.save(modelMapper.map(personDto, Child.class));
-            return;
-        }
-        personRepository.save(modelMapper.map(personDto, Person.class));
+        Person entity = mapService.dtoToEntity(personDto);
+        personRepository.save(entity);
     }
 
     @Override
     public PersonDto getPerson(int id) {
         Person person = personRepository.findById(id).orElseThrow(PersonNotFoundException::new);
-if (person instanceof Child) {
-    return modelMapper.map(person, ChildDto.class);
-}
-if (person instanceof Employee) {
-    return modelMapper.map(person, EmployeeDto.class);
-}
-        return modelMapper.map(person, PersonDto.class);
+        return mapService.entityToDto(person);
     }
 
     @Override
@@ -58,7 +46,7 @@ if (person instanceof Employee) {
     public PersonDto deletePerson(int id) {
         Person person = personRepository.findById(id).orElseThrow(PersonNotFoundException::new);
         personRepository.delete(person);
-        return modelMapper.map(person, PersonDto.class);
+        return mapService.entityToDto(person);
     }
 
     @Override
@@ -68,7 +56,7 @@ if (person instanceof Employee) {
         if (newName != null) {
             person.setName(newName);
         }
-        return modelMapper.map(person, PersonDto.class);
+        return mapService.entityToDto(person);
     }
 
     @Override
@@ -86,14 +74,14 @@ if (person instanceof Employee) {
             personAddress.setBuilding(newAddress.getBuilding());
         }
         person.setAddress(modelMapper.map(personAddress, Address.class));
-        return modelMapper.map(person, PersonDto.class);
+        return mapService.entityToDto(person);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PersonDto[] findPersonsByName(String name) {
         return personRepository.findPersonsByName(name)
-                .map(person -> modelMapper.map(person, PersonDto.class))
+                .map(mapService::entityToDto)
                 .toArray(PersonDto[]::new);
     }
 
@@ -101,7 +89,7 @@ if (person instanceof Employee) {
     @Transactional(readOnly = true)
     public PersonDto[] findPersonsByCity(String city) {
         return personRepository.findPersonsByAddressCity(city)
-                .map(person -> modelMapper.map(person, PersonDto.class))
+                .map(mapService::entityToDto)
                 .toArray(PersonDto[]::new);
     }
 
@@ -111,13 +99,29 @@ if (person instanceof Employee) {
         LocalDate startDate = LocalDate.now().minusYears(maxAge);
         LocalDate endDate = LocalDate.now().minusYears(minAge);
         return personRepository.findByBirthDateBetween(startDate, endDate)
-                .map(person -> modelMapper.map(person, PersonDto.class))
+                .map(mapService::entityToDto)
                 .toArray(PersonDto[]::new);
     }
 
     @Override
     public Iterable<CityPopulationDto> getCityPopulation() {
         return personRepository.findCityPopulation();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ChildDto[] getAllChildren() {
+        return personRepository.getAllChildren()
+                .map(c-> modelMapper.map(c, ChildDto.class))
+                .toArray(ChildDto[]::new);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EmployeeDto[] findEmployeesBySalary(Integer minSalary, Integer maxSalary) {
+        return personRepository.findEmployeesBySalary(minSalary, maxSalary)
+                .map(e -> modelMapper.map(e, EmployeeDto.class))
+                .toArray(EmployeeDto[]::new);
     }
 
     @Override

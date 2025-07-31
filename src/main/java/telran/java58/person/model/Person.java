@@ -3,6 +3,7 @@ package telran.java58.person.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
 @AllArgsConstructor
@@ -12,7 +13,7 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "persons")
 @Inheritance(strategy = InheritanceType.JOINED)
-public class Person {
+public class Person implements Serializable {
     @Id
     private int id;
     @Setter
