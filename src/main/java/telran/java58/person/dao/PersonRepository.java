@@ -17,7 +17,7 @@ public interface PersonRepository extends JpaRepository<Person, Integer> {
 
     Stream<Person> findPersonsByAddressCity(String city);
 
-    @Query("select distinct new telran.java58.person.dto.CityPopulationDto(p.address.city, count(p)) from Person p group by p.address.city")
-    Stream<CityPopulationDto> findCityPopulation();
+    @Query("select new telran.java58.person.dto.CityPopulationDto(p.address.city, count(p)) from Person p group by p.address.city")
+    Iterable<CityPopulationDto> findCityPopulation();
 
 }
